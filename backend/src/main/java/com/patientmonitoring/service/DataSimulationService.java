@@ -60,8 +60,10 @@ public class DataSimulationService {
                 request.put("oxygenLevel", vital.getOxygenLevel());
                 request.put("temperature", vital.getTemperature());
 
+                @SuppressWarnings("rawtypes")
                 ResponseEntity<java.util.Map> response = restTemplate.postForEntity(AI_SERVICE_URL, request, java.util.Map.class);
-                java.util.Map<String, Object> body = response.getBody();
+                @SuppressWarnings("unchecked")
+                java.util.Map<String, Object> body = (java.util.Map<String, Object>) response.getBody();
                 
                 if (body != null && Boolean.TRUE.equals(body.get("isAnomaly"))) {
                     System.out.println("ANOMALY DETECTED by AI Service for Patient " + patient.getId() + ": " + body.get("message"));
