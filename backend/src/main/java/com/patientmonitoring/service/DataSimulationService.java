@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.ResponseEntity;
 import java.util.List;
 import java.util.Random;
 
@@ -20,6 +22,8 @@ public class DataSimulationService {
     private final VitalRepository vitalRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final Random random = new Random();
+    private final RestTemplate restTemplate = new RestTemplate();
+    private final String AI_SERVICE_URL = "http://ai_service:8000/analyze";
 
     public DataSimulationService(PatientRepository patientRepository, 
                                  VitalRepository vitalRepository, 
@@ -46,7 +50,26 @@ public class DataSimulationService {
             // Broadcast to a general topic for the doctor dashboard
             messagingTemplate.convertAndSend("/topic/vitals/all", vital);
             
-            // TODO: In Phase 2, we will send this vital to the Python AI service for anomaly detection via a REST call
+            // Send vital to Python AI service for anomaly detection
+            try {
+                java.util.Map<String, Object> request = new java.util.HashMap<>();
+                request.put("patientId", patient.getId());
+                request.put("heartRate", vital.getHeartRate());
+                request.put("bloodPressureSystolic", vital.getBloodPressureSystolic());
+                request.put("bloodPressureDiastolic", vital.getBloodPressureDiastolic());
+                request.put("oxygenLevel", vital.getOxygenLevel());
+                request.put("temperature", vital.getTemperature());
+
+                ResponseEntity<java.util.Map> response = restTemplate.postForEntity(AI_SERVICE_URL, request, java.util.Map.class);
+                java.util.Map<String, Object> body = response.getBody();
+                
+                if (body != null && Boolean.TRUE.equals(body.get("isAnomaly"))) {
+                    System.out.println("ANOMALY DETECTED by AI Service for Patient " + patient.getId() + ": " + body.get("message"));
+                    // In a complete implementation, this would save to the AlertRepository
+                }
+            } catch (Exception e) {
+                System.err.println("Error calling AI service: " + e.getMessage());
+            }
         }
     }
 
