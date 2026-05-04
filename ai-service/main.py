@@ -1,11 +1,19 @@
-from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import Optional
 import pandas as pd
 import numpy as np
-from datetime import datetime
 
 app = FastAPI(title="Patient Vitals AI Anomaly Detection Service")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class VitalReading(BaseModel):
     patientId: int
@@ -20,10 +28,43 @@ class AnomalyResponse(BaseModel):
     vitalType: Optional[str] = None
     severity: Optional[str] = None
     message: Optional[str] = None
+    riskScore: int = 0
+    status: str = "Normal"
+    recommendation: str = ""
 
-# A simple rule-based approach combined with basic statistical moving average simulation
-# In a real scenario, we'd store the last N readings per patient in memory or Redis.
 patient_history = {}
+
+def _compute_risk_and_guidance(vital: VitalReading) -> tuple[int, str, str]:
+    score = 0
+    if vital.heartRate > 110:
+        score += 25
+    elif vital.heartRate > 95:
+        score += 10
+
+    if vital.oxygenLevel < 92:
+        score += 35
+    elif vital.oxygenLevel < 95:
+        score += 15
+
+    if vital.bloodPressureSystolic > 160:
+        score += 25
+    elif vital.bloodPressureSystolic > 130:
+        score += 10
+
+    variation = int(np.random.randint(0, 26))
+    score = min(100, score + variation)
+
+    if score < 35:
+        status = "Normal"
+        recommendation = "Vitals are stable. Continue routine monitoring."
+    elif score < 70:
+        status = "Warning"
+        recommendation = "Patient needs observation. Check vitals frequently."
+    else:
+        status = "Critical"
+        recommendation = "Immediate medical attention required!"
+
+    return score, status, recommendation
 
 @app.get("/")
 def read_root():
@@ -32,38 +73,87 @@ def read_root():
 @app.post("/analyze", response_model=AnomalyResponse)
 def analyze_vital(vital: VitalReading):
     pid = vital.patientId
-    
+
     if pid not in patient_history:
         patient_history[pid] = []
-        
+
     history = patient_history[pid]
     history.append(vital.dict())
-    
-    # Keep only the last 20 readings for moving average calculation
+
     if len(history) > 20:
         history.pop(0)
-    
+
     df = pd.DataFrame(history)
-    
-    # 1. Rule-based checks (Hard thresholds)
+
+    risk_score, status, recommendation = _compute_risk_and_guidance(vital)
+
+    # Hard thresholds — clinical priorities
     if vital.oxygenLevel < 90:
-        return AnomalyResponse(isAnomaly=True, vitalType="Oxygen", severity="CRITICAL", message=f"Critical low oxygen level: {vital.oxygenLevel}%")
+        return AnomalyResponse(
+            isAnomaly=True,
+            vitalType="Oxygen",
+            severity="CRITICAL",
+            message=f"Critical low oxygen level: {vital.oxygenLevel}%",
+            riskScore=risk_score,
+            status=status,
+            recommendation=recommendation,
+        )
     if vital.heartRate > 130:
-        return AnomalyResponse(isAnomaly=True, vitalType="Heart Rate", severity="HIGH", message=f"Dangerous tachycardia: {vital.heartRate} bpm")
+        return AnomalyResponse(
+            isAnomaly=True,
+            vitalType="Heart Rate",
+            severity="HIGH",
+            message=f"Dangerous tachycardia: {vital.heartRate} bpm",
+            riskScore=risk_score,
+            status=status,
+            recommendation=recommendation,
+        )
     if vital.bloodPressureSystolic > 180:
-        return AnomalyResponse(isAnomaly=True, vitalType="Blood Pressure", severity="HIGH", message=f"Hypertensive crisis: {vital.bloodPressureSystolic}/{vital.bloodPressureDiastolic}")
-    
-    # 2. Statistical Anomaly Detection (Z-score based on history)
-    # We need at least 5 readings to calculate a meaningful Z-score
+        return AnomalyResponse(
+            isAnomaly=True,
+            vitalType="Blood Pressure",
+            severity="HIGH",
+            message=f"Hypertensive crisis: {vital.bloodPressureSystolic}/{vital.bloodPressureDiastolic}",
+            riskScore=risk_score,
+            status=status,
+            recommendation=recommendation,
+        )
+
     if len(df) >= 5:
-        mean_hr = df['heartRate'].mean()
-        std_hr = df['heartRate'].std()
+        mean_hr = df["heartRate"].mean()
+        std_hr = df["heartRate"].std()
         if std_hr > 0:
             z_score = abs(vital.heartRate - mean_hr) / std_hr
-            if z_score > 3.0: # 3 standard deviations
-                return AnomalyResponse(isAnomaly=True, vitalType="Heart Rate", severity="MEDIUM", message=f"Unusual spike in heart rate detected. Current: {vital.heartRate}, Average: {mean_hr:.1f}")
+            if z_score > 3.0:
+                return AnomalyResponse(
+                    isAnomaly=True,
+                    vitalType="Heart Rate",
+                    severity="MEDIUM",
+                    message=f"Unusual spike in heart rate detected. Current: {vital.heartRate}, Average: {mean_hr:.1f}",
+                    riskScore=risk_score,
+                    status=status,
+                    recommendation=recommendation,
+                )
 
-    return AnomalyResponse(isAnomaly=False)
+    # Composite risk — aligns dashboard alerts with the AI panel
+    if risk_score >= 65:
+        sev = "HIGH" if risk_score >= 80 else "MEDIUM"
+        return AnomalyResponse(
+            isAnomaly=True,
+            vitalType="Risk Assessment",
+            severity=sev,
+            message=f"Elevated composite risk ({risk_score}%): {recommendation}",
+            riskScore=risk_score,
+            status=status,
+            recommendation=recommendation,
+        )
+
+    return AnomalyResponse(
+        isAnomaly=False,
+        riskScore=risk_score,
+        status=status,
+        recommendation=recommendation,
+    )
 
 if __name__ == "__main__":
     import uvicorn

@@ -43,10 +43,10 @@ public class AuthController {
         return ResponseEntity.ok(new AuthResponse(token, user.getRole().name()));
     }
 
-    // A simple endpoint to setup a test admin if no users exist
+    // A simple endpoint to setup a test admin if no admin user exists
     @PostMapping("/setup-admin")
     public ResponseEntity<?> setupAdmin() {
-        if (userRepository.count() == 0) {
+        if (!userRepository.findByUsername("admin").isPresent()) {
             User admin = new User();
             admin.setUsername("admin");
             admin.setPasswordHash(passwordEncoder.encode("admin123"));
@@ -54,6 +54,6 @@ public class AuthController {
             userRepository.save(admin);
             return ResponseEntity.ok("Admin created: admin / admin123");
         }
-        return ResponseEntity.badRequest().body("Users already exist");
+        return ResponseEntity.badRequest().body("Admin user already exists");
     }
 }

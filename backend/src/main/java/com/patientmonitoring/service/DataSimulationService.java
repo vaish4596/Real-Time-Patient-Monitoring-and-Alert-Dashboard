@@ -1,6 +1,7 @@
 package com.patientmonitoring.service;
 
 import com.patientmonitoring.model.Patient;
+import com.patientmonitoring.model.Severity;
 import com.patientmonitoring.model.Vital;
 import com.patientmonitoring.repository.PatientRepository;
 import com.patientmonitoring.repository.VitalRepository;
@@ -20,16 +21,19 @@ public class DataSimulationService {
 
     private final PatientRepository patientRepository;
     private final VitalRepository vitalRepository;
+    private final AlertService alertService;
     private final SimpMessagingTemplate messagingTemplate;
     private final Random random = new Random();
     private final RestTemplate restTemplate = new RestTemplate();
     private final String AI_SERVICE_URL = "http://ai_service:8000/analyze";
 
-    public DataSimulationService(PatientRepository patientRepository, 
-                                 VitalRepository vitalRepository, 
+    public DataSimulationService(PatientRepository patientRepository,
+                                 VitalRepository vitalRepository,
+                                 AlertService alertService,
                                  SimpMessagingTemplate messagingTemplate) {
         this.patientRepository = patientRepository;
         this.vitalRepository = vitalRepository;
+        this.alertService = alertService;
         this.messagingTemplate = messagingTemplate;
     }
 
@@ -66,8 +70,13 @@ public class DataSimulationService {
                 java.util.Map<String, Object> body = (java.util.Map<String, Object>) response.getBody();
                 
                 if (body != null && Boolean.TRUE.equals(body.get("isAnomaly"))) {
-                    System.out.println("ANOMALY DETECTED by AI Service for Patient " + patient.getId() + ": " + body.get("message"));
-                    // In a complete implementation, this would save to the AlertRepository
+                    String vitalType = String.valueOf(body.getOrDefault("vitalType", "Unknown"));
+                    String message = String.valueOf(body.getOrDefault("message", "Anomaly detected"));
+                    Severity severity = parseSeverity(body.get("severity"));
+
+                    alertService.tryCreateAiAlert(patient.getId(), vitalType, severity, message).ifPresent(alert ->
+                            System.out.println("ANOMALY DETECTED by AI Service for Patient " + patient.getId() + ": " + message)
+                    );
                 }
             } catch (Exception e) {
                 System.err.println("Error calling AI service: " + e.getMessage());
@@ -100,5 +109,17 @@ public class DataSimulationService {
         }
 
         return vital;
+    }
+
+    private Severity parseSeverity(Object severityValue) {
+        if (severityValue == null) {
+            return Severity.MEDIUM;
+        }
+
+        try {
+            return Severity.valueOf(severityValue.toString().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            return Severity.MEDIUM;
+        }
     }
 }

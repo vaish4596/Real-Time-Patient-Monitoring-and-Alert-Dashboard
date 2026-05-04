@@ -1,8 +1,66 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
-  body {
-    background-color: #f8fafc; /* bg-slate-50 */
-    color: #0f172a; /* text-slate-900 */
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
+
+  body {
+    @apply bg-slate-50 text-slate-900 transition-colors duration-300;
+  }
+
+  .dark body {
+    @apply bg-black text-zinc-100;
+  }
+}
+
+@keyframes alert-critical-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 14px 4px rgba(239, 68, 68, 0.28);
+  }
+}
+
+@keyframes alert-critical-pulse-dark {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.55);
+  }
+  50% {
+    box-shadow:
+      0 0 24px 8px rgba(248, 113, 113, 0.35),
+      0 0 0 1px rgba(248, 113, 113, 0.4);
+  }
+}
+
+.alert-critical-live {
+  animation: alert-critical-pulse 1.6s ease-in-out infinite;
+}
+
+.dark .alert-critical-live {
+  animation: alert-critical-pulse-dark 1.6s ease-in-out infinite;
+}
+
+.mesh-bg-light {
+  background-color: #f8fafc;
+  background-image:
+    radial-gradient(at 40% 20%, rgba(59, 130, 246, 0.14) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, rgba(16, 185, 129, 0.12) 0px, transparent 45%),
+    radial-gradient(at 0% 80%, rgba(139, 92, 246, 0.12) 0px, transparent 45%);
+}
+
+/* Full black canvas + saturated accent glows (teal / fuchsia / cyan) */
+.mesh-bg-dark {
+  background-color: #000000;
+  background-image:
+    radial-gradient(ellipse 120% 80% at 10% -10%, rgba(6, 182, 212, 0.35) 0px, transparent 55%),
+    radial-gradient(ellipse 90% 70% at 95% 8%, rgba(217, 70, 239, 0.28) 0px, transparent 50%),
+    radial-gradient(ellipse 70% 50% at 50% 100%, rgba(16, 185, 129, 0.22) 0px, transparent 45%),
+    radial-gradient(at 75% 60%, rgba(59, 130, 246, 0.12) 0px, transparent 40%);
 }

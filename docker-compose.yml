@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: mysql:8.0
@@ -14,6 +12,12 @@ services:
       - db_data:/var/lib/mysql
     networks:
       - patient_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   ai_service:
     build: ./ai-service
@@ -23,7 +27,9 @@ services:
     networks:
       - patient_net
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    restart: on-failure
 
   backend:
     build: ./backend
@@ -37,7 +43,9 @@ services:
     networks:
       - patient_net
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    restart: on-failure
 
   frontend:
     build: ./frontend
@@ -48,6 +56,7 @@ services:
       - patient_net
     depends_on:
       - backend
+    restart: on-failure
 
 networks:
   patient_net:
