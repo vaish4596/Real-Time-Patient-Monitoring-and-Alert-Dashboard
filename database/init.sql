@@ -54,13 +54,13 @@ CREATE TABLE logs (
 
 -- Seed: default users (password: admin123)
 INSERT INTO users (username, password_hash, role) VALUES
-  ('doctor1', '$2a$10$fBgw6P.gEcxAFj1pH5437.92kfd5pNFL.0DZOnw6wWvmkt74cA41y', 'DOCTOR');
+  ('doctor1', '$2b$10$MvYP8QFttzZyoRh9d8M57eiMBUTBcxfo2pNyi0tcAGCqKzy4mtjX6', 'DOCTOR');
 
 -- Seed: test patients linked to the doctor user
 INSERT INTO users (username, password_hash, role) VALUES
-  ('patient1', '$2a$10$fBgw6P.gEcxAFj1pH5437.92kfd5pNFL.0DZOnw6wWvmkt74cA41y', 'PATIENT'),
-  ('patient2', '$2a$10$fBgw6P.gEcxAFj1pH5437.92kfd5pNFL.0DZOnw6wWvmkt74cA41y', 'PATIENT'),
-  ('patient3', '$2a$10$fBgw6P.gEcxAFj1pH5437.92kfd5pNFL.0DZOnw6wWvmkt74cA41y', 'PATIENT');
+  ('patient1', '$2b$10$MvYP8QFttzZyoRh9d8M57eiMBUTBcxfo2pNyi0tcAGCqKzy4mtjX6', 'PATIENT'),
+  ('patient2', '$2b$10$MvYP8QFttzZyoRh9d8M57eiMBUTBcxfo2pNyi0tcAGCqKzy4mtjX6', 'PATIENT'),
+  ('patient3', '$2b$10$MvYP8QFttzZyoRh9d8M57eiMBUTBcxfo2pNyi0tcAGCqKzy4mtjX6', 'PATIENT');
 
 INSERT INTO patients (user_id, first_name, last_name, age, gender, medical_history) VALUES
   (2, 'Alice',   'Johnson', 45, 'Female', 'Hypertension'),
