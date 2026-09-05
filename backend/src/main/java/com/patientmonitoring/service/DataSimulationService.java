@@ -26,8 +26,8 @@ public class DataSimulationService {
     private final SimpMessagingTemplate messagingTemplate;
     private final Random random = new Random();
     private final RestTemplate restTemplate = new RestTemplate();
-    @Value("${AI_SERVICE_URL:http://ai_service:8000/analyze}")
-private String aiServiceUrl;
+    @Value("${AI_SERVICE_URL:http://localhost:8000/analyze}")
+    private String aiServiceUrl;
 
     public DataSimulationService(PatientRepository patientRepository,
                                  VitalRepository vitalRepository,
