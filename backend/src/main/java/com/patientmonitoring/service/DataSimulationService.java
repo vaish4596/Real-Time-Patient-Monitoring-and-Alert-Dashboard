@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
 import java.util.List;
 import java.util.Random;
 
@@ -25,7 +26,8 @@ public class DataSimulationService {
     private final SimpMessagingTemplate messagingTemplate;
     private final Random random = new Random();
     private final RestTemplate restTemplate = new RestTemplate();
-    private final String AI_SERVICE_URL = "http://ai_service:8000/analyze";
+    @Value("${AI_SERVICE_URL:http://ai_service:8000/analyze}")
+private String aiServiceUrl;
 
     public DataSimulationService(PatientRepository patientRepository,
                                  VitalRepository vitalRepository,
@@ -65,7 +67,8 @@ public class DataSimulationService {
                 request.put("temperature", vital.getTemperature());
 
                 @SuppressWarnings("rawtypes")
-                ResponseEntity<java.util.Map> response = restTemplate.postForEntity(AI_SERVICE_URL, request, java.util.Map.class);
+                ResponseEntity<java.util.Map> response =
+    restTemplate.postForEntity(aiServiceUrl, request, java.util.Map.class);
                 @SuppressWarnings("unchecked")
                 java.util.Map<String, Object> body = (java.util.Map<String, Object>) response.getBody();
                 
