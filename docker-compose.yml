@@ -26,30 +26,28 @@ services:
       - "8000:8000"
     networks:
       - patient_net
-    depends_on:
-      db:
-        condition: service_healthy
     restart: on-failure
 
   backend:
-  build: ./backend
-  container_name: patient_backend
-  ports:
-    - "8080:8080"
-  environment:
-    - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/patient_db
-    - SPRING_DATASOURCE_USERNAME=root
-    - SPRING_DATASOURCE_PASSWORD=root
-    - AI_SERVICE_URL=http://ai_service:8000/analyze
-  networks:
-    - patient_net
-  depends_on:
-    db:
-      condition: service_healthy
-    ai_service:
-      condition: service_started
-  restart: on-failure
-  
+    build: ./backend
+    container_name: patient_backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/patient_db
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+      - AI_SERVICE_URL=http://ai_service:8000/analyze
+      - JWT_SECRET=PP/aFqqYHImS693RQ1UKrDvOYiF/BtxXab50xZnl7hk=
+    networks:
+      - patient_net
+    depends_on:
+      db:
+        condition: service_healthy
+      ai_service:
+        condition: service_started
+    restart: on-failure
+
   frontend:
     build: ./frontend
     container_name: patient_frontend
@@ -67,3 +65,7 @@ networks:
 
 volumes:
   db_data:
+
+
+
+
