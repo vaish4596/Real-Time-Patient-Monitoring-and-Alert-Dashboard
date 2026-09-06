@@ -1,17 +1,11 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  define: {
-    global: 'globalThis',
-  },
-  optimizeDeps: {
-    esbuildOptions: {
-      define: {
-        global: 'globalThis',
-      },
-    },
-  },
+  server: {
+    host: '0.0.0.0',
+    port: 3000,
+    allowedHosts: ['front-end-production-8d3e.up.railway.app']
+  }
 })
