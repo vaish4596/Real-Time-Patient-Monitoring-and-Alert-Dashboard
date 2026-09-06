@@ -56,4 +56,15 @@ public class AuthController {
         }
         return ResponseEntity.badRequest().body("Admin user already exists");
     }
+
+    @PostMapping("/reset-doctor")
+public ResponseEntity<?> resetDoctor() {
+    User doctor = userRepository.findByUsername("doctor1")
+            .orElseThrow(() -> new RuntimeException("doctor1 not found"));
+
+    doctor.setPasswordHash(passwordEncoder.encode("doctor123"));
+    userRepository.save(doctor);
+
+    return ResponseEntity.ok("Password reset successfully");
+}
 }
