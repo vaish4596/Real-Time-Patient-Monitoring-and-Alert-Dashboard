@@ -19,7 +19,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws-vitals")
-                .setAllowedOrigins("http://localhost:3000")
-                .withSockJS();
+        .setAllowedOrigins(
+                "http://localhost:3000",
+                "https://front-end-production-8d3e.up.railway.app"
+        )
+        .withSockJS();
     }
 }

@@ -207,17 +207,18 @@ export default function DoctorDashboard() {
   }, []);
 
   useEffect(() => {
-    axios.get('http://localhost:8080/api/alerts/active').then((res) => {
+    axios.get('https://real-time-patient-monitoring-and-alert-dashboard-production.up.railway.app/api/alerts/active').then((res) => {
       setAlerts(res.data);
       registerRiskAlertSounds(res.data);
     }).catch((err) => console.error('Error fetching alerts', err));
 
-    axios.get('http://localhost:8080/api/alerts/resolved').then((res) => {
+    axios.get('https://real-time-patient-monitoring-and-alert-dashboard-production.up.railway.app/api/alerts/resolved').then((res) => {
       setResolvedAlerts(res.data);
     }).catch((err) => console.error('Error fetching resolved alerts', err));
 
     const client = new Client({
-      webSocketFactory: () => new SockJS('http://localhost:8080/ws-vitals'),
+      webSocketFactory: () =>
+         new SockJS('https://real-time-patient-monitoring-and-alert-dashboard-production.up.railway.app/ws-vitals'),
       onConnect: () => {
         client.subscribe('/topic/vitals/all', (message) => {
           const newVital = JSON.parse(message.body);
@@ -233,8 +234,7 @@ export default function DoctorDashboard() {
             return updated;
           });
 
-          axios
-            .post('http://localhost:8000/analyze', {
+          axios.post('https://ai-service-production-ad59.up.railway.app/analyze', {
               patientId: newVital.patient?.id || 1,
               heartRate: newVital.heartRate,
               bloodPressureSystolic: newVital.bloodPressureSystolic,
@@ -256,8 +256,9 @@ export default function DoctorDashboard() {
               }
 
               if (d.isAnomaly) {
-                axios
-                  .post('http://localhost:8080/api/alerts/ai', {
+                axios.post(
+  'https://real-time-patient-monitoring-and-alert-dashboard-production.up.railway.app/api/alerts/ai',
+  {
                     patientId: newVital.patient?.id || 1,
                     vitalType: d.vitalType || 'AI Assessment',
                     severity: d.severity || 'MEDIUM',
@@ -293,7 +294,7 @@ export default function DoctorDashboard() {
   }, [registerRiskAlertSounds]);
 
   const resolveAlert = async (alertId) => {
-    const response = await axios.post(`http://localhost:8080/api/alerts/${alertId}/resolve`);
+    const response = await axios.post(`https://real-time-patient-monitoring-and-alert-dashboard-production.up.railway.app/api/alerts/${alertId}/resolve`);
     setAlerts((prevAlerts) => prevAlerts.filter((a) => a.id !== alertId));
     if (response.data) {
       setResolvedAlerts((prevResolved) => [response.data, ...prevResolved].slice(0, 50));
